@@ -1,0 +1,66 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: fitlife_community_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=changeme
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    container_name: fitlife_community_loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  identity:
+    build:
+      context: ../Identity
+      dockerfile: FitLife.Identity.Api/Dockerfile
+    container_name: fitlife_community_identity
+    ports:
+      - "5244:8080"
+    environment:
+      - MongoDB__ConnectionString=mongodb://admin:changeme@mongodb:27017
+      - MongoDB__DatabaseName=fitlife-identity
+      - Jwt__Issuer=fitlife-identity
+      - Jwt__Audience=fitlife
+      - Jwt__ExpiryMinutes=60
+      - Jwt__KeyId=fitlife-key-1
+      - Jwt__RsaPrivateKey=${IDENTITY_JWT_RSA_PRIVATE_KEY}
+      - LOKI_ENDPOINT=http://loki:3100
+    depends_on:
+      - mongodb
+      - loki
+    restart: unless-stopped
+
+  community:
+    build:
+      context: .
+      dockerfile: FitLife.Community.Api/Dockerfile
+    container_name: fitlife_community_api
+    ports:
+      - "5246:8080"
+    environment:
+      - MongoDB__ConnectionString=mongodb://admin:changeme@mongodb:27017
+      - MongoDB__DatabaseName=fitlife-community
+      - MongoDB__CommunitiesCollectionName=communities
+      - MongoDB__PostsCollectionName=communityPosts
+      - Jwt__Issuer=fitlife-identity
+      - Jwt__Audience=fitlife
+      - Jwt__JwksUrl=http://identity:8080/.well-known/jwks.json
+      - LOKI_ENDPOINT=http://loki:3100
+    depends_on:
+      - mongodb
+      - identity
+      - loki
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
