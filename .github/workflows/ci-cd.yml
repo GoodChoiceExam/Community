@@ -3,6 +3,7 @@ name: CI/CD
 on:
   push:
     branches: [master, develop, "feature/**"]
+    tags: ["v*.*.*"]
   pull_request:
     branches: [develop, master]
 
@@ -31,7 +32,7 @@ jobs:
     name: Push to DockerHub
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +42,8 @@ jobs:
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/fitlife-community
           tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=sha-
             type=raw,value=latest
 
@@ -58,11 +61,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Trigger Infrastructure deploy
-        run: |
-          gh workflow run deploy.yml \
-            --repo GoodChoiceExam/Infrastructure \
-            --ref master
-        env:
-          GH_TOKEN: ${{ secrets.DEPLOY_PAT }}
