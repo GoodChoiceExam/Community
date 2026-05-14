@@ -135,9 +135,22 @@ public class CommunityService : ICommunityService
 
     public async Task<CenterCommunity?> GetCommunityByCenterAsync(Center center)
     {
-        return await _communities
+        var existingCommunity = await _communities
             .Find(community => community.Center == center)
             .FirstOrDefaultAsync();
+
+        if (existingCommunity is not null)
+            return existingCommunity;
+
+        var community = new CenterCommunity
+        {
+            Center = center,
+            Name = $"{FormatCenterName(center)} Gruppe"
+        };
+
+        await _communities.InsertOneAsync(community);
+
+        return community;
     }
 
     private static Center MapCenter(string primaryCenter)
