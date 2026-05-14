@@ -1,6 +1,7 @@
 using FitLife.Community.Api.DTOs;
 using FitLife.Community.Api.Models;
 using MongoDB.Driver;
+using FitLife.Community.Api.IntegrationEvents;
 
 namespace FitLife.Community.Api.Services;
 
@@ -110,5 +111,58 @@ public class CommunityService : ICommunityService
                     post.CreatedAt);
             })
             .ToList();
+    }
+    
+    public async Task HandleMemberCreatedAsync(MemberCreatedEvent memberCreatedEvent)
+    {
+        var center = MapCenter(memberCreatedEvent.PrimaryCenter);
+
+        var existingCommunity = await _communities
+            .Find(community => community.Center == center)
+            .FirstOrDefaultAsync();
+
+        if (existingCommunity is not null)
+            return;
+
+        var community = new CenterCommunity
+        {
+            Center = center,
+            Name = $"{FormatCenterName(center)} Gruppe"
+        };
+
+        await _communities.InsertOneAsync(community);
+    }
+
+    public async Task<CenterCommunity?> GetCommunityByCenterAsync(Center center)
+    {
+        return await _communities
+            .Find(community => community.Center == center)
+            .FirstOrDefaultAsync();
+    }
+
+    private static Center MapCenter(string primaryCenter)
+    {
+        return primaryCenter switch
+        {
+            "Vesterbro" => Center.Vesterbro,
+            "Nørrebro" => Center.Nørrebro,
+            "Østerbro" => Center.Østerbro,
+            "AarhusC" => Center.AarhusC,
+            "Kolding" => Center.Kolding,
+            _ => throw new ArgumentException($"Unknown center: {primaryCenter}")
+        };
+    }
+
+    private static string FormatCenterName(Center center)
+    {
+        return center switch
+        {
+            Center.Vesterbro => "Vesterbro",
+            Center.Nørrebro => "Nørrebro",
+            Center.Østerbro => "Østerbro",
+            Center.AarhusC => "Aarhus C",
+            Center.Kolding => "Kolding",
+            _ => center.ToString()
+        };
     }
 }

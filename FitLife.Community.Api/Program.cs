@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using NLog;
 using NLog.Web;
+using FitLife.Community.Api.Messaging;
 
 var logger = LogManager.Setup().LoadConfigurationFromFile("NLog.config").GetCurrentClassLogger();
 
@@ -59,6 +60,8 @@ try
     });
 
     builder.Services.AddSingleton<ICommunityService, CommunityService>();
+    builder.Services.AddHostedService<MemberCreatedConsumer>();
+    
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
             options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
