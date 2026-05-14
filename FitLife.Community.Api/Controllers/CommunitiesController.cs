@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using FitLife.Community.Api.DTOs;
+using FitLife.Community.Api.Models;
 using FitLife.Community.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +26,19 @@ public class CommunitiesController : ControllerBase
     {
         _logger.LogInformation("Fetching communities");
         return Ok(await _communityService.GetCommunitiesAsync());
+    }
+    
+    [HttpGet("by-center/{center}")]
+    public async Task<IActionResult> GetCommunityByCenter(Center center)
+    {
+        var community = await _communityService.GetCommunityByCenterAsync(center);
+        if (community is null)
+        {
+            _logger.LogWarning("Community for center {Center} was not found", center);
+            return NotFound();
+        }
+
+        return Ok(community);
     }
 
     [HttpGet("{id:guid}")]
