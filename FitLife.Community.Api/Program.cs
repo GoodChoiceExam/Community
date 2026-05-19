@@ -107,11 +107,7 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    app.MapGet("/healthz", (ILogger<Program> log) =>
-    {
-        log.LogInformation("Health check requested");
-        return Results.Ok(new { status = "healthy" });
-    });
+    app.MapGet("/healthz", () => Results.Ok(new { status = "healthy" }));
     app.MapControllers();
 
     app.Run();
