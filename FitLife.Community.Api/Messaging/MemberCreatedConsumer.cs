@@ -73,7 +73,7 @@ public class MemberCreatedConsumer : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Could not handle MemberCreated event");
-                await channel.BasicNackAsync(args.DeliveryTag, multiple: false, requeue: true);
+                await channel.BasicNackAsync(args.DeliveryTag, multiple: false, requeue: false);
             }
         };
 
