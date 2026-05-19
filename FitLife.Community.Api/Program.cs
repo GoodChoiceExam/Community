@@ -1,4 +1,5 @@
 using System.Text;
+using FitLife.Community.Api.Repositories;
 using FitLife.Community.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -69,6 +70,7 @@ try
     var database = mongoClient.GetDatabase(builder.Configuration["MongoDB:DatabaseName"]);
     builder.Services.AddSingleton(database);
 
+    builder.Services.AddSingleton<ICommunityRepository, CommunityRepository>();
     builder.Services.AddSingleton<ICommunityService, CommunityService>();
     builder.Services.AddHostedService<MemberCreatedConsumer>();
     
