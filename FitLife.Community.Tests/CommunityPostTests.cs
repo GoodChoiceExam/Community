@@ -2,6 +2,7 @@ using FitLife.Community.Api.Models;
 
 namespace FitLife.Community.Tests;
 
+[TestFixture]
 public class CommunityPostTests
 {
     [Test]

@@ -3,6 +3,7 @@ using FitLife.Community.Api.DTOs;
 
 namespace FitLife.Community.Tests;
 
+[TestFixture]
 public class CreateCommunityPostRequestTests
 {
     [Test]
