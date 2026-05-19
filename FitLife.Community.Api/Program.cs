@@ -1,8 +1,12 @@
 using System.Text;
+using FitLife.Community.Api.Repositories;
 using FitLife.Community.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
+using MongoDB.Driver;
 using NLog;
 using NLog.Web;
 using FitLife.Community.Api.Messaging;
@@ -11,6 +15,8 @@ var logger = LogManager.Setup().LoadConfigurationFromFile("NLog.config").GetCurr
 
 try
 {
+    BsonSerializer.RegisterSerializer(new GuidSerializer(MongoDB.Bson.GuidRepresentation.Standard));
+
     var builder = WebApplication.CreateBuilder(args);
 
     builder.Logging.ClearProviders();
@@ -60,6 +66,11 @@ try
                 .AllowAnyMethod());
     });
 
+    var mongoClient = new MongoClient(builder.Configuration["MongoDB:ConnectionString"]);
+    var database = mongoClient.GetDatabase(builder.Configuration["MongoDB:DatabaseName"]);
+    builder.Services.AddSingleton(database);
+
+    builder.Services.AddSingleton<ICommunityRepository, CommunityRepository>();
     builder.Services.AddSingleton<ICommunityService, CommunityService>();
     builder.Services.AddHostedService<MemberCreatedConsumer>();
     
@@ -98,11 +109,7 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    app.MapGet("/healthz", (ILogger<Program> log) =>
-    {
-        log.LogInformation("Health check requested");
-        return Results.Ok(new { status = "healthy" });
-    });
+    app.MapGet("/healthz", () => Results.Ok(new { status = "healthy" }));
     app.MapControllers();
 
     app.Run();
@@ -116,5 +123,3 @@ finally
 {
     LogManager.Shutdown();
 }
-
-public partial class Program;

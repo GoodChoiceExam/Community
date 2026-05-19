@@ -1,38 +1,27 @@
 using FitLife.Community.Api.DTOs;
 using FitLife.Community.Api.Models;
-using MongoDB.Driver;
+using FitLife.Community.Api.Repositories;
 using FitLife.Community.Api.IntegrationEvents;
 
 namespace FitLife.Community.Api.Services;
 
 public class CommunityService : ICommunityService
 {
-    private readonly IMongoCollection<CenterCommunity> _communities;
-    private readonly IMongoCollection<CommunityPost> _posts;
+    private readonly ICommunityRepository _repository;
 
-    public CommunityService(IConfiguration configuration)
+    public CommunityService(ICommunityRepository repository)
     {
-        var mongoConn = configuration["MongoDB:ConnectionString"]!;
-        var mongoDb = configuration["MongoDB:DatabaseName"]!;
-        var communitiesCollectionName = configuration["MongoDB:CommunitiesCollectionName"] ?? "communities";
-        var postsCollectionName = configuration["MongoDB:PostsCollectionName"] ?? "communityPosts";
-
-        var client = new MongoClient(mongoConn);
-        var database = client.GetDatabase(mongoDb);
-        _communities = database.GetCollection<CenterCommunity>(communitiesCollectionName);
-        _posts = database.GetCollection<CommunityPost>(postsCollectionName);
+        _repository = repository;
     }
 
     public async Task<List<CenterCommunity>> GetCommunitiesAsync()
     {
-        return await _communities.Find(_ => true)
-            .SortBy(community => community.Center)
-            .ToListAsync();
+        return await _repository.GetCommunitiesAsync();
     }
 
     public async Task<CenterCommunity?> GetCommunityByIdAsync(Guid id)
     {
-        return await _communities.Find(community => community.Id == id).FirstOrDefaultAsync();
+        return await _repository.GetCommunityByIdAsync(id);
     }
 
     public async Task<CenterCommunity> CreateCommunityAsync(CreateCommunityRequest request)
@@ -43,19 +32,16 @@ public class CommunityService : ICommunityService
             Name = request.Name.Trim()
         };
 
-        await _communities.InsertOneAsync(community);
-        return community;
+        return await _repository.AddCommunityAsync(community);
     }
 
     public async Task<List<CommunityPost>?> GetPostsAsync(Guid communityId)
     {
-        var community = await GetCommunityByIdAsync(communityId);
+        var community = await _repository.GetCommunityByIdAsync(communityId);
         if (community is null)
             return null;
 
-        return await _posts.Find(post => post.CommunityId == communityId)
-            .SortByDescending(post => post.CreatedAt)
-            .ToListAsync();
+        return await _repository.GetPostsByCommunityAsync(communityId);
     }
 
     public async Task<CommunityPost?> CreatePostAsync(
@@ -64,7 +50,7 @@ public class CommunityService : ICommunityService
         string authorName,
         CreateCommunityPostRequest request)
     {
-        var community = await GetCommunityByIdAsync(communityId);
+        var community = await _repository.GetCommunityByIdAsync(communityId);
         if (community is null)
             return null;
 
@@ -76,51 +62,44 @@ public class CommunityService : ICommunityService
             Content = request.Content.Trim()
         };
 
-        await _posts.InsertOneAsync(post);
-        return post;
+        return await _repository.AddPostAsync(post);
     }
 
     public async Task<List<CommunityActivityDto>> GetRecentActivityAsync(int take = 20)
     {
         take = Math.Clamp(take, 1, 100);
-        var posts = await _posts.Find(_ => true)
-            .SortByDescending(post => post.CreatedAt)
-            .Limit(take)
-            .ToListAsync();
+        var posts = await _repository.GetRecentPostsAsync(take);
 
         if (posts.Count == 0)
             return [];
 
-        var communityIds = posts.Select(post => post.CommunityId).Distinct().ToArray();
-        var communities = await _communities.Find(community => communityIds.Contains(community.Id)).ToListAsync();
-        var communityById = communities.ToDictionary(community => community.Id);
+        var communityIds = posts.Select(p => p.CommunityId).Distinct();
+        var communities = await _repository.GetCommunitiesByIdsAsync(communityIds);
+        var communityById = communities.ToDictionary(c => c.Id);
 
         return posts
-            .Where(post => communityById.ContainsKey(post.CommunityId))
-            .Select(post =>
+            .Where(p => communityById.ContainsKey(p.CommunityId))
+            .Select(p =>
             {
-                var community = communityById[post.CommunityId];
+                var community = communityById[p.CommunityId];
                 return new CommunityActivityDto(
-                    post.Id,
+                    p.Id,
                     community.Id,
                     community.Center,
                     community.Name,
-                    post.MemberId,
-                    post.AuthorName,
-                    post.Content,
-                    post.CreatedAt);
+                    p.MemberId,
+                    p.AuthorName,
+                    p.Content,
+                    p.CreatedAt);
             })
             .ToList();
     }
-    
+
     public async Task HandleMemberCreatedAsync(MemberCreatedEvent memberCreatedEvent)
     {
         var center = MapCenter(memberCreatedEvent.PrimaryCenter);
 
-        var existingCommunity = await _communities
-            .Find(community => community.Center == center)
-            .FirstOrDefaultAsync();
-
+        var existingCommunity = await _repository.GetCommunityByCenterAsync(center);
         if (existingCommunity is not null)
             return;
 
@@ -130,17 +109,14 @@ public class CommunityService : ICommunityService
             Name = $"{FormatCenterName(center)} Gruppe"
         };
 
-        await _communities.InsertOneAsync(community);
+        await _repository.AddCommunityAsync(community);
     }
 
     public async Task<CenterCommunity?> GetCommunityByCenterAsync(Center center)
     {
-        var existingCommunity = await _communities
-            .Find(community => community.Center == center)
-            .FirstOrDefaultAsync();
-
-        if (existingCommunity is not null)
-            return existingCommunity;
+        var existing = await _repository.GetCommunityByCenterAsync(center);
+        if (existing is not null)
+            return existing;
 
         var community = new CenterCommunity
         {
@@ -148,9 +124,7 @@ public class CommunityService : ICommunityService
             Name = $"{FormatCenterName(center)} Gruppe"
         };
 
-        await _communities.InsertOneAsync(community);
-
-        return community;
+        return await _repository.AddCommunityAsync(community);
     }
 
     private static Center MapCenter(string primaryCenter)
