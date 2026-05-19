@@ -14,7 +14,7 @@ var logger = LogManager.Setup().LoadConfigurationFromFile("NLog.config").GetCurr
 
 try
 {
-    BsonSerializer.RegisterSerializer(new GuidSerializer(MongoDB.Bson.GuidRepresentation.Standard));
+    BsonSerializer.RegisterSerializer(new GuidSerializer(MongoDB.Bson.GuidRepresentation.CSharpLegacy));
 
     var builder = WebApplication.CreateBuilder(args);
 
