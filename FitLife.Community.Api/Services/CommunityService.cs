@@ -10,17 +10,10 @@ public class CommunityService : ICommunityService
     private readonly IMongoCollection<CenterCommunity> _communities;
     private readonly IMongoCollection<CommunityPost> _posts;
 
-    public CommunityService(IConfiguration configuration)
+    public CommunityService(IMongoDatabase database)
     {
-        var mongoConn = configuration["MongoDB:ConnectionString"]!;
-        var mongoDb = configuration["MongoDB:DatabaseName"]!;
-        var communitiesCollectionName = configuration["MongoDB:CommunitiesCollectionName"] ?? "communities";
-        var postsCollectionName = configuration["MongoDB:PostsCollectionName"] ?? "communityPosts";
-
-        var client = new MongoClient(mongoConn);
-        var database = client.GetDatabase(mongoDb);
-        _communities = database.GetCollection<CenterCommunity>(communitiesCollectionName);
-        _posts = database.GetCollection<CommunityPost>(postsCollectionName);
+        _communities = database.GetCollection<CenterCommunity>("communities");
+        _posts = database.GetCollection<CommunityPost>("communityPosts");
     }
 
     public async Task<List<CenterCommunity>> GetCommunitiesAsync()
