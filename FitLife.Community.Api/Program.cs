@@ -3,6 +3,9 @@ using FitLife.Community.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
+using MongoDB.Driver;
 using NLog;
 using NLog.Web;
 using FitLife.Community.Api.Messaging;
@@ -11,6 +14,8 @@ var logger = LogManager.Setup().LoadConfigurationFromFile("NLog.config").GetCurr
 
 try
 {
+    BsonSerializer.RegisterSerializer(new GuidSerializer(MongoDB.Bson.GuidRepresentation.Standard));
+
     var builder = WebApplication.CreateBuilder(args);
 
     builder.Logging.ClearProviders();
@@ -59,6 +64,10 @@ try
                 .AllowAnyHeader()
                 .AllowAnyMethod());
     });
+
+    var mongoClient = new MongoClient(builder.Configuration["MongoDB:ConnectionString"]);
+    var database = mongoClient.GetDatabase(builder.Configuration["MongoDB:DatabaseName"]);
+    builder.Services.AddSingleton(database);
 
     builder.Services.AddSingleton<ICommunityService, CommunityService>();
     builder.Services.AddHostedService<MemberCreatedConsumer>();
