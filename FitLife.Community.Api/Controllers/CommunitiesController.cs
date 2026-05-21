@@ -107,6 +107,7 @@ public class CommunitiesController : ControllerBase
         return Guid.TryParse(value, out var memberId) ? memberId : null;
     }
 
+    [AllowAnonymous]
     [HttpGet("version")]
     public async Task<Dictionary<string, string>> GetVersion()
     {
