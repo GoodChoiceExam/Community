@@ -74,7 +74,8 @@ try
     builder.Services.AddSingleton<ICommunityRepository, CommunityRepository>();
     builder.Services.AddSingleton<ICommunityService, CommunityService>();
     builder.Services.AddHostedService<MemberCreatedConsumer>();
-    
+    builder.Services.AddHostedService<HeartbeatService>();
+
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
