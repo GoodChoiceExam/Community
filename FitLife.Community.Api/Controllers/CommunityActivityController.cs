@@ -1,9 +1,11 @@
 using FitLife.Community.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FitLife.Community.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/community/activity")]
 public class CommunityActivityController : ControllerBase
 {

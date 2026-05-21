@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FitLife.Community.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/communities")]
 public class CommunitiesController : ControllerBase
 {
@@ -104,6 +105,28 @@ public class CommunitiesController : ControllerBase
                     ?? User.FindFirstValue("member_id");
 
         return Guid.TryParse(value, out var memberId) ? memberId : null;
+    }
+
+    [HttpGet("version")]
+    public async Task<Dictionary<string, string>> GetVersion()
+    {
+        var properties = new Dictionary<string, string>();
+        properties.Add("service", "FitLife Community API");
+        var ver = System.Diagnostics.FileVersionInfo.GetVersionInfo(typeof(Program).Assembly.Location).ProductVersion;
+        properties.Add("version", ver!);
+        try
+        {
+            var hostName = System.Net.Dns.GetHostName();
+            var ips = await System.Net.Dns.GetHostAddressesAsync(hostName);
+            var ipa = ips.First().MapToIPv4().ToString();
+            properties.Add("hosted-at-address", ipa);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            properties.Add("hosted-at-address", "Could not resolve IP-address");
+        }
+        return properties;
     }
 
     private string GetAuthorName()
