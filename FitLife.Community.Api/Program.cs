@@ -1,6 +1,8 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using FitLife.Community.Api.Repositories;
 using FitLife.Community.Api.Services;
+using FitLife.Community.Api.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -9,7 +11,6 @@ using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using NLog;
 using NLog.Web;
-using FitLife.Community.Api.Messaging;
 
 var logger = LogManager.Setup().LoadConfigurationFromFile("NLog.config").GetCurrentClassLogger();
 
@@ -76,7 +77,7 @@ try
     
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
-            options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
     {
