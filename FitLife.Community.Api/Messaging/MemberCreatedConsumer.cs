@@ -4,6 +4,7 @@ using FitLife.Community.Api.IntegrationEvents;
 using FitLife.Community.Api.Services;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.Client.Exceptions;
 
 namespace FitLife.Community.Api.Messaging;
 
@@ -38,8 +39,27 @@ public class MemberCreatedConsumer : BackgroundService
 
         const string queue = "membership.member.created";
 
-        await using var connection = await factory.CreateConnectionAsync();
-        await using var channel = await connection.CreateChannelAsync();
+        IConnection? connection = null;
+        int[] retryDelaysSeconds = [2, 4, 8, 16, 30];
+        foreach (var delay in retryDelaysSeconds)
+        {
+            try
+            {
+                connection = await factory.CreateConnectionAsync(stoppingToken);
+                break;
+            }
+            catch (BrokerUnreachableException ex)
+            {
+                _logger.LogWarning(ex, "RabbitMQ not reachable, retrying in {Delay}s", delay);
+                await Task.Delay(TimeSpan.FromSeconds(delay), stoppingToken);
+            }
+        }
+
+        if (connection is null)
+            throw new InvalidOperationException("Could not connect to RabbitMQ after retries");
+
+        await using var _ = connection;
+        await using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
         await channel.QueueDeclareAsync(
             queue: queue,
