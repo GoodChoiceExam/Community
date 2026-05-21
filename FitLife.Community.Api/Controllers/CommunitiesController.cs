@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FitLife.Community.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/communities")]
 public class CommunitiesController : ControllerBase
 {
