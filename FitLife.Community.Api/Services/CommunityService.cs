@@ -3,6 +3,7 @@ using FitLife.Community.Api.Models;
 using FitLife.Community.Api.Repositories;
 using FitLife.Community.Api.IntegrationEvents;
 
+
 namespace FitLife.Community.Api.Services;
 
 // Indeholder forretningslogik for communities og posts.
@@ -19,22 +20,6 @@ public class CommunityService : ICommunityService
     public async Task<List<CenterCommunity>> GetCommunitiesAsync()
     {
         return await _repository.GetCommunitiesAsync();
-    }
-
-    public async Task<CenterCommunity?> GetCommunityByIdAsync(Guid id)
-    {
-        return await _repository.GetCommunityByIdAsync(id);
-    }
-
-    public async Task<CenterCommunity> CreateCommunityAsync(CreateCommunityRequest request)
-    {
-        var community = new CenterCommunity
-        {
-            Center = request.Center!.Value,
-            Name = request.Name.Trim()
-        };
-
-        return await _repository.AddCommunityAsync(community);
     }
 
     public async Task<List<CommunityPost>?> GetPostsAsync(Guid communityId)
@@ -65,38 +50,6 @@ public class CommunityService : ICommunityService
         };
 
         return await _repository.AddPostAsync(post);
-    }
-
-    public async Task<List<CommunityActivityDto>> GetRecentActivityAsync(int take = 20)
-    {
-        // Begrænser take til maks 100 så klienten ikke kan hente ubegrænset mange poster
-        take = Math.Clamp(take, 1, 100);
-        var posts = await _repository.GetRecentPostsAsync(take);
-
-        if (posts.Count == 0)
-            return [];
-
-        // Henter de tilhørende communities i ét opslag i stedet for N opslag i en løkke
-        var communityIds = posts.Select(p => p.CommunityId).Distinct();
-        var communities = await _repository.GetCommunitiesByIdsAsync(communityIds);
-        var communityById = communities.ToDictionary(c => c.Id);
-
-        return posts
-            .Where(p => communityById.ContainsKey(p.CommunityId))
-            .Select(p =>
-            {
-                var community = communityById[p.CommunityId];
-                return new CommunityActivityDto(
-                    p.Id,
-                    community.Id,
-                    community.Center,
-                    community.Name,
-                    p.MemberId,
-                    p.AuthorName,
-                    p.Content,
-                    p.CreatedAt);
-            })
-            .ToList();
     }
 
     // Når et nyt medlem oprettes oprettes der automatisk en community-gruppe for deres center,

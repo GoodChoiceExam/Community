@@ -48,21 +48,6 @@ public class CommunityRepository : ICommunityRepository
             .ToListAsync();
     }
 
-    public async Task<List<CommunityPost>> GetRecentPostsAsync(int take)
-    {
-        // Henter de `take` nyeste posts på tværs af alle communities
-        return await _posts.Find(_ => true)
-            .SortByDescending(p => p.CreatedAt)
-            .Limit(take)
-            .ToListAsync();
-    }
-
-    public async Task<List<CenterCommunity>> GetCommunitiesByIdsAsync(IEnumerable<Guid> ids)
-    {
-        var idList = ids.ToArray();
-        return await _communities.Find(c => idList.Contains(c.Id)).ToListAsync();
-    }
-
     public async Task<CommunityPost> AddPostAsync(CommunityPost post)
     {
         await _posts.InsertOneAsync(post);
