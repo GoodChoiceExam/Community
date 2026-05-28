@@ -11,7 +11,5 @@ public interface ICommunityRepository
     Task<CenterCommunity?> GetCommunityByCenterAsync(Center center);
     Task<CenterCommunity> AddCommunityAsync(CenterCommunity community);
     Task<List<CommunityPost>> GetPostsByCommunityAsync(Guid communityId);
-    Task<List<CommunityPost>> GetRecentPostsAsync(int take);
-    Task<List<CenterCommunity>> GetCommunitiesByIdsAsync(IEnumerable<Guid> ids);
     Task<CommunityPost> AddPostAsync(CommunityPost post);
 }
