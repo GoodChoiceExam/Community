@@ -3,6 +3,7 @@ using FitLife.Community.Api.Models;
 
 namespace FitLife.Community.Api.DTOs;
 
+// Indeholder de felter klienten sender når et nyt community skal oprettes.
 public class CreateCommunityRequest
 {
     [Required]

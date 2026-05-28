@@ -2,6 +2,8 @@ using FitLife.Community.Api.Models;
 
 namespace FitLife.Community.Api.Repositories;
 
+// Definerer kontrakten for databaseoperationer på communities og posts.
+// Implementeres af CommunityRepository og kan mockes i tests.
 public interface ICommunityRepository
 {
     Task<List<CenterCommunity>> GetCommunitiesAsync();

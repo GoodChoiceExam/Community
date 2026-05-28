@@ -2,6 +2,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace FitLife.Community.Api.Models;
 
+// Repræsenterer en community-gruppe tilknyttet et specifikt FitLife-center. Gemmes i MongoDB.
 public class CenterCommunity
 {
     [BsonId]
