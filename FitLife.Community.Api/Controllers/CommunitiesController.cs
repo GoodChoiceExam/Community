@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FitLife.Community.Api.Controllers;
 
+// Eksponerer endpoints til oprettelse og hentning af communities og posts via HTTP.
+// MemberId og forfatternavn hentes fra JWT-tokenet så kun autentificerede brugere kan poste.
 [ApiController]
 [Authorize]
 [Route("api/communities")]
@@ -97,6 +99,7 @@ public class CommunitiesController : ControllerBase
         return Created($"/api/communities/{id}/posts/{post.Id}", post);
     }
 
+    // Prøver fire mulige claims fordi JWT-libraries navngiver subject-claimen forskelligt
     private Guid? GetMemberId()
     {
         var value = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
@@ -130,6 +133,7 @@ public class CommunitiesController : ControllerBase
         return properties;
     }
 
+    // Falder tilbage til "FitLife Member" hvis tokenet ikke indeholder et navn
     private string GetAuthorName()
     {
         return User.FindFirstValue(JwtRegisteredClaimNames.Name)

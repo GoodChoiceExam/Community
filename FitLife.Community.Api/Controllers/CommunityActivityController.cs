@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FitLife.Community.Api.Controllers;
 
+// Eksponerer endpoint til at hente seneste aktivitet på tværs af alle communities.
+// Bruges af frontend til at vise et aktivitetsfeed.
 [ApiController]
 [Authorize]
 [Route("api/community/activity")]

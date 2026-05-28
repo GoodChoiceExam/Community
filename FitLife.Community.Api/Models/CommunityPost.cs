@@ -2,6 +2,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace FitLife.Community.Api.Models;
 
+// Repræsenterer et indlæg i et community. Gemmes i MongoDB i communityPosts-collectionen.
 public class CommunityPost
 {
     [BsonId]

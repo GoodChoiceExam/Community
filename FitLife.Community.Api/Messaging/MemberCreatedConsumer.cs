@@ -8,6 +8,9 @@ using RabbitMQ.Client.Exceptions;
 
 namespace FitLife.Community.Api.Messaging;
 
+// BackgroundService der lytter på RabbitMQ-køen "membership.member.created".
+// Når Membership-servicen opretter et nyt medlem, modtager denne service eventet
+// og opretter automatisk en community-gruppe for medlemmets center.
 public class MemberCreatedConsumer : BackgroundService
 {
     private readonly IConfiguration _configuration;
@@ -26,6 +29,7 @@ public class MemberCreatedConsumer : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Forbinder til RabbitMQ
         var factory = new ConnectionFactory
         {
             HostName = _configuration["RabbitMQ:Host"]
@@ -40,6 +44,7 @@ public class MemberCreatedConsumer : BackgroundService
         const string queue = "membership.member.created";
 
         IConnection? connection = null;
+        // Prøver at forbinde med eksponentielt stigende forsinkelse for at give RabbitMQ tid til at starte
         int[] retryDelaysSeconds = [2, 4, 8, 16, 30];
         foreach (var delay in retryDelaysSeconds)
         {
@@ -84,6 +89,7 @@ public class MemberCreatedConsumer : BackgroundService
                 }
 
                 await _communityService.HandleMemberCreatedAsync(memberCreatedEvent);
+                // Bekræfter at beskeden er behandlet — RabbitMQ fjerner den fra køen
                 await channel.BasicAckAsync(args.DeliveryTag, multiple: false);
 
                 _logger.LogInformation(
@@ -93,6 +99,7 @@ public class MemberCreatedConsumer : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Could not handle MemberCreated event");
+                // requeue: false — fejlede beskeder smides væk i stedet for at blive sendt igen i en løkke
                 await channel.BasicNackAsync(args.DeliveryTag, multiple: false, requeue: false);
             }
         };
@@ -102,6 +109,7 @@ public class MemberCreatedConsumer : BackgroundService
             autoAck: false,
             consumer: consumer);
 
+        // Holder servicen i live indtil applikationen stoppes
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }
 }
