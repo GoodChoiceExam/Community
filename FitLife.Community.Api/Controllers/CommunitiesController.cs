@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using FitLife.Community.Api.DTOs;
-using FitLife.Community.Api.Models;
 using FitLife.Community.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,28 +41,6 @@ public class CommunitiesController : ControllerBase
         }
 
         return Ok(community);
-    }
-
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetCommunity(Guid id)
-    {
-        var community = await _communityService.GetCommunityByIdAsync(id);
-        if (community is null)
-        {
-            _logger.LogWarning("Community {CommunityId} was not found", id);
-            return NotFound();
-        }
-
-        return Ok(community);
-    }
-
-    [HttpPost]
-    [Authorize]
-    public async Task<IActionResult> CreateCommunity(CreateCommunityRequest request)
-    {
-        var community = await _communityService.CreateCommunityAsync(request);
-        _logger.LogInformation("Created community {CommunityId}", community.Id);
-        return CreatedAtAction(nameof(GetCommunity), new { id = community.Id }, community);
     }
 
     [HttpGet("{id:guid}/posts")]
