@@ -3,8 +3,11 @@ using FitLife.Community.Api.Models;
 using FitLife.Community.Api.Repositories;
 using FitLife.Community.Api.IntegrationEvents;
 
+
 namespace FitLife.Community.Api.Services;
 
+// Indeholder forretningslogik for communities og posts.
+// Controlleren kalder servicen, som delegerer databaseoperationer til repository.
 public class CommunityService : ICommunityService
 {
     private readonly ICommunityRepository _repository;
@@ -17,22 +20,6 @@ public class CommunityService : ICommunityService
     public async Task<List<CenterCommunity>> GetCommunitiesAsync()
     {
         return await _repository.GetCommunitiesAsync();
-    }
-
-    public async Task<CenterCommunity?> GetCommunityByIdAsync(Guid id)
-    {
-        return await _repository.GetCommunityByIdAsync(id);
-    }
-
-    public async Task<CenterCommunity> CreateCommunityAsync(CreateCommunityRequest request)
-    {
-        var community = new CenterCommunity
-        {
-            Center = request.Center!.Value,
-            Name = request.Name.Trim()
-        };
-
-        return await _repository.AddCommunityAsync(community);
     }
 
     public async Task<List<CommunityPost>?> GetPostsAsync(Guid communityId)
@@ -65,36 +52,8 @@ public class CommunityService : ICommunityService
         return await _repository.AddPostAsync(post);
     }
 
-    public async Task<List<CommunityActivityDto>> GetRecentActivityAsync(int take = 20)
-    {
-        take = Math.Clamp(take, 1, 100);
-        var posts = await _repository.GetRecentPostsAsync(take);
-
-        if (posts.Count == 0)
-            return [];
-
-        var communityIds = posts.Select(p => p.CommunityId).Distinct();
-        var communities = await _repository.GetCommunitiesByIdsAsync(communityIds);
-        var communityById = communities.ToDictionary(c => c.Id);
-
-        return posts
-            .Where(p => communityById.ContainsKey(p.CommunityId))
-            .Select(p =>
-            {
-                var community = communityById[p.CommunityId];
-                return new CommunityActivityDto(
-                    p.Id,
-                    community.Id,
-                    community.Center,
-                    community.Name,
-                    p.MemberId,
-                    p.AuthorName,
-                    p.Content,
-                    p.CreatedAt);
-            })
-            .ToList();
-    }
-
+    // Når et nyt medlem oprettes oprettes der automatisk en community-gruppe for deres center,
+    // men kun hvis den ikke allerede eksisterer
     public async Task HandleMemberCreatedAsync(MemberCreatedEvent memberCreatedEvent)
     {
         var center = MapCenter(memberCreatedEvent.PrimaryCenter);
@@ -112,6 +71,7 @@ public class CommunityService : ICommunityService
         await _repository.AddCommunityAsync(community);
     }
 
+    // Opretter automatisk en community-gruppe for centeret hvis den ikke findes endnu
     public async Task<CenterCommunity?> GetCommunityByCenterAsync(Center center)
     {
         var existing = await _repository.GetCommunityByCenterAsync(center);

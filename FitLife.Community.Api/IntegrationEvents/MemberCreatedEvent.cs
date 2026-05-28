@@ -1,5 +1,6 @@
 namespace FitLife.Community.Api.IntegrationEvents;
 
+// Event der modtages fra Membership-servicen via RabbitMQ når et nyt medlem oprettes.
 public record MemberCreatedEvent(
     Guid EventId,
     Guid MemberId,

@@ -3,6 +3,7 @@ using FitLife.Community.Api.DTOs;
 
 namespace FitLife.Community.Tests;
 
+// Tester at DataAnnotations-valideringen på CreateCommunityPostRequest virker korrekt.
 [TestFixture]
 public class CreateCommunityPostRequestTests
 {
