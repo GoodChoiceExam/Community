@@ -2,6 +2,7 @@ using FitLife.Community.Api.Models;
 
 namespace FitLife.Community.Tests;
 
+// Tester at CommunityPost-modellen initialiserer Id og CreatedAt korrekt ved oprettelse.
 [TestFixture]
 public class CommunityPostTests
 {

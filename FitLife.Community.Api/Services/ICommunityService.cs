@@ -4,6 +4,8 @@ using FitLife.Community.Api.IntegrationEvents;
 
 namespace FitLife.Community.Api.Services;
 
+// Definerer kontrakten for community-forretningslogik.
+// Implementeres af CommunityService og kan mockes i tests.
 public interface ICommunityService
 {
     Task<List<CenterCommunity>> GetCommunitiesAsync();

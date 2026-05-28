@@ -12,10 +12,14 @@ using MongoDB.Driver;
 using NLog;
 using NLog.Web;
 
+// Konfigurerer og starter Community API'et.
+// Opsætter JWT-validering, MongoDB, RabbitMQ-consumer, NLog og Swagger.
+
 var logger = LogManager.Setup().LoadConfigurationFromFile("NLog.config").GetCurrentClassLogger();
 
 try
 {
+    // Guid gemmes som standard UUID-streng i MongoDB i stedet for BSON binary
     BsonSerializer.RegisterSerializer(new GuidSerializer(MongoDB.Bson.GuidRepresentation.Standard));
 
     var builder = WebApplication.CreateBuilder(args);
@@ -59,6 +63,7 @@ try
 
     builder.Services.AddAuthorization();
 
+    // CORS tillader kun kald fra lokal Blazor-frontend under udvikling
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("Frontend", policy =>
@@ -76,6 +81,7 @@ try
     builder.Services.AddHostedService<MemberCreatedConsumer>();
     builder.Services.AddHostedService<HeartbeatService>();
 
+    // Enum-værdier serialiseres som strenge (fx "Vesterbro") i stedet for tal i JSON-responses
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));

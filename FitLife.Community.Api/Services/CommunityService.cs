@@ -5,6 +5,8 @@ using FitLife.Community.Api.IntegrationEvents;
 
 namespace FitLife.Community.Api.Services;
 
+// Indeholder forretningslogik for communities og posts.
+// Controlleren kalder servicen, som delegerer databaseoperationer til repository.
 public class CommunityService : ICommunityService
 {
     private readonly ICommunityRepository _repository;
@@ -67,12 +69,14 @@ public class CommunityService : ICommunityService
 
     public async Task<List<CommunityActivityDto>> GetRecentActivityAsync(int take = 20)
     {
+        // Begrænser take til maks 100 så klienten ikke kan hente ubegrænset mange poster
         take = Math.Clamp(take, 1, 100);
         var posts = await _repository.GetRecentPostsAsync(take);
 
         if (posts.Count == 0)
             return [];
 
+        // Henter de tilhørende communities i ét opslag i stedet for N opslag i en løkke
         var communityIds = posts.Select(p => p.CommunityId).Distinct();
         var communities = await _repository.GetCommunitiesByIdsAsync(communityIds);
         var communityById = communities.ToDictionary(c => c.Id);
@@ -95,6 +99,8 @@ public class CommunityService : ICommunityService
             .ToList();
     }
 
+    // Når et nyt medlem oprettes oprettes der automatisk en community-gruppe for deres center,
+    // men kun hvis den ikke allerede eksisterer
     public async Task HandleMemberCreatedAsync(MemberCreatedEvent memberCreatedEvent)
     {
         var center = MapCenter(memberCreatedEvent.PrimaryCenter);
@@ -112,6 +118,7 @@ public class CommunityService : ICommunityService
         await _repository.AddCommunityAsync(community);
     }
 
+    // Opretter automatisk en community-gruppe for centeret hvis den ikke findes endnu
     public async Task<CenterCommunity?> GetCommunityByCenterAsync(Center center)
     {
         var existing = await _repository.GetCommunityByCenterAsync(center);
